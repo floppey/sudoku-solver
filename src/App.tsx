@@ -72,7 +72,7 @@ function App() {
   const handleSolveClick = () => {
     let attempts = 1000;
     do {
-      const newGame = solveSudoku(game);
+      const newGame = solveSudoku(game, true);
       setGame(newGame);
       if (newGame.isCompleted) {
         break;
@@ -81,10 +81,15 @@ function App() {
     } while (attempts > 0);
   };
 
+  const handleSolveNextClick = () => {
+    const newGame = solveSudoku(game, false);
+    setGame(newGame);
+  };
+
   return (
     <>
-      <button onClick={() => handleSolveClick()}>Solve</button>
-
+      <button onClick={() => handleSolveClick()}>Solve All</button>
+      <button onClick={() => handleSolveNextClick()}>Solve Next</button>
       <button onClick={() => resetGame()}>Reset</button>
       <div className="game">
         {game.board.cells.map((row, rowIndex) => (

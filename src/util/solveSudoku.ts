@@ -38,7 +38,10 @@ export const getOptionsForCell = (
   return Array.from(options);
 };
 
-export const solveSudoku = (game: SudokuGame): SudokuGame => {
+export const solveSudoku = (
+  game: SudokuGame,
+  allowGuess = false
+): SudokuGame => {
   const newGame = {
     ...game,
   };
@@ -130,7 +133,7 @@ export const solveSudoku = (game: SudokuGame): SudokuGame => {
   }
 
   // Use WFC to make a guess
-  if (!changed) {
+  if (!changed && allowGuess) {
     let minOptions = 999;
     let minCells: Cell[] = [];
     newGame.board.cells.forEach((row) => {
