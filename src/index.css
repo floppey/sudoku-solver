@@ -79,6 +79,8 @@ button:focus-visible {
   }
 }
 
+
+
 .cell {
   display: inline-block;
   width: 5rem;
@@ -168,6 +170,12 @@ button:focus-visible {
 }
 .cell:nth-of-type(3n) {
   border-right: 3px solid white;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
 }
 
 .row:first-child {

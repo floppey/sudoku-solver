@@ -81,25 +81,10 @@ function App() {
     } while (attempts > 0);
   };
 
-  const lockCells = () => {
-    const newBoard = { ...game.board };
-    newBoard.cells.forEach((row) => {
-      row.forEach((cell) => {
-        if (cell.value !== null) {
-          cell.isFixed = true;
-        }
-      });
-    });
-    setGame({
-      ...game,
-      board: newBoard,
-    });
-  };
-
   return (
     <>
       <button onClick={() => handleSolveClick()}>Solve</button>
-      <button onClick={() => lockCells()}>Lock</button>
+
       <button onClick={() => resetGame()}>Reset</button>
       <div className="game">
         {game.board.cells.map((row, rowIndex) => (
