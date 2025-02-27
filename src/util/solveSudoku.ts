@@ -39,20 +39,22 @@ export const getOptionsForCell = (
 };
 
 export const solveSudoku = (game: SudokuGame): SudokuGame => {
-  const solved = { ...game };
+  const newGame = {
+    ...game,
+  };
 
   let changed = false;
   let attempts = 0;
   do {
     changed = false;
     // Fill in cells with only one option
-    solved.board.cells.forEach((row, rowIndex) => {
+    newGame.board.cells.forEach((row, rowIndex) => {
       row.forEach((cell, columnIndex) => {
         if (cell.value !== null) {
           cell.options = [cell.value];
           return;
         }
-        const options = getOptionsForCell(solved, rowIndex, columnIndex);
+        const options = getOptionsForCell(newGame, rowIndex, columnIndex);
         if (options.length === 1) {
           changed = true;
           cell.value = options[0];
@@ -67,7 +69,7 @@ export const solveSudoku = (game: SudokuGame): SudokuGame => {
   } while (changed && attempts < 20);
 
   // Check for unique options in row, column, and grid
-  solved.board.cells.forEach((row) => {
+  newGame.board.cells.forEach((row) => {
     row.forEach((cell) => {
       if (cell.value !== null) {
         return;
@@ -75,7 +77,7 @@ export const solveSudoku = (game: SudokuGame): SudokuGame => {
       cell.options.forEach((option) => {
         // Check row
         const rowOptions = row.filter((c) => c.options.includes(option)).length;
-        const column = solved.board.cells.map((r) => r[cell.column]);
+        const column = newGame.board.cells.map((r) => r[cell.column]);
         const columnOptions = column.filter((c) =>
           c.options.includes(option)
         ).length;
@@ -97,7 +99,7 @@ export const solveSudoku = (game: SudokuGame): SudokuGame => {
     temp = false;
     for (let row = 0; row < 9; row += 3) {
       for (let col = 0; col < 9; col += 3) {
-        temp = reducePairsInGrid(solved.board, row, col) || changed;
+        temp = reducePairsInGrid(newGame.board, row, col) || changed;
       }
     }
     changed = changed || temp;
@@ -105,7 +107,7 @@ export const solveSudoku = (game: SudokuGame): SudokuGame => {
   } while (temp && attempts < 10);
 
   // Fill in cells with only one option
-  solved.board.cells.forEach((row) => {
+  newGame.board.cells.forEach((row) => {
     row.forEach((cell) => {
       if (cell.value !== null) {
         return;
@@ -117,12 +119,21 @@ export const solveSudoku = (game: SudokuGame): SudokuGame => {
     });
   });
 
+  // Check if the game is completed
+  newGame.isCompleted = newGame.board.cells.every((row) =>
+    row.every((cell) => cell.value !== null)
+  );
+
+  // Return if the game is completed
+  if (newGame.isCompleted) {
+    return newGame;
+  }
+
+  // Use WFC to make a guess
   if (!changed) {
-    console.log("No changes made");
-    // get one of the cells with the fewest options
-    let minOptions = 10;
+    let minOptions = 999;
     let minCells: Cell[] = [];
-    solved.board.cells.forEach((row) => {
+    newGame.board.cells.forEach((row) => {
       row.forEach((cell) => {
         if (cell.value !== null) return;
         if (cell.options.length < minOptions) {
@@ -135,35 +146,35 @@ export const solveSudoku = (game: SudokuGame): SudokuGame => {
       });
     });
 
+    // If there are no options, the game is unsolvable. Revert to a previous state
     if (minOptions === 0) {
-      console.log("No options left");
-      return solved.moves[Math.floor(Math.random() * solved.moves.length)]
+      return newGame.moves[Math.floor(Math.random() * newGame.moves.length)]
         .previousState;
     }
 
-    // Make a guess
-    console.log(minCells);
+    // Pick a random cell and value
     const cell = minCells[Math.floor(Math.random() * minCells.length)];
     const value = cell.options[Math.floor(Math.random() * cell.options.length)];
+    // Record the move so it can be undone later if it leads to an unsolvable state
     const move: Move = {
       row: cell.row,
       column: cell.column,
       value: value,
       previousState: {
-        ...solved,
+        ...newGame,
         board: {
-          cells: solved.board.cells.map((row) =>
-            row.map((cell) => ({ ...cell }))
+          cells: newGame.board.cells.map((row) =>
+            row.map((cell) => ({ ...cell, isFixed: cell.isFixed }))
           ),
         },
       },
     };
-
     game.moves.push(move);
 
+    // Make the guess
     cell.value = value;
     cell.options = [value];
   }
 
-  return solved;
+  return newGame;
 };
