@@ -5,7 +5,7 @@ self.onmessage = function (event) {
   try {
     let solution: SudokuGame;
     const puzzle = event.data as SudokuGame;
-    let attempts = puzzle.boardSize === 16 ? 1000 : 1000;
+    let attempts = 1000;
     do {
       solution = solveSudoku(puzzle, true);
       if (solution.isCompleted) {
