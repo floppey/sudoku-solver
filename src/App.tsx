@@ -87,10 +87,12 @@ function App() {
   };
 
   return (
-    <>
-      <button onClick={() => handleSolveClick()}>Solve All</button>
-      <button onClick={() => handleSolveNextClick()}>Solve Next</button>
-      <button onClick={() => resetGame()}>Reset</button>
+    <div className="app">
+      <div className="buttons">
+        <button onClick={() => handleSolveClick()}>Solve All</button>
+        <button onClick={() => handleSolveNextClick()}>Solve Next</button>
+        <button onClick={() => resetGame()}>Reset</button>
+      </div>
       <div className="game">
         {game.board.cells.map((row, rowIndex) => (
           <div key={rowIndex} className="row">
@@ -131,7 +133,7 @@ function App() {
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 }
 

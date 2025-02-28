@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -34,11 +38,8 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 320px;
+  padding: 1rem;
+  min-width: 100vw;
   min-height: 100vh;
 }
 
@@ -79,7 +80,19 @@ button:focus-visible {
   }
 }
 
+#root {
+ text-align: center;;
+}
 
+.buttons {
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+.app {
+  margin: 0 auto;
+  display: inline-block;
+}
 
 .cell {
   display: inline-block;
