@@ -209,6 +209,8 @@ button:focus-visible {
   top: 0;
   left: 0;
   font-size: 4rem;
+  margin: 0;
+  padding: 0;
 }
 
 .cell__input:read-only {
