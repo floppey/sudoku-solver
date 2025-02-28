@@ -48,18 +48,38 @@ function App() {
   }, [boardSize]);
 
   const handleSolveClick = () => {
-    let attempts = boardSize === 16 ? 100 : 1000;
     if (!originalGame) {
       setOriginalGame(cloneGame(game));
     }
-    do {
-      const newGame = solveSudoku(originalGame ?? game, true);
-      setGame(newGame);
-      if (newGame.isCompleted) {
-        break;
-      }
-      attempts--;
-    } while (attempts > 0);
+    const workerCount = navigator.hardwareConcurrency || 4;
+    const workers = Array.from(
+      { length: workerCount },
+      () =>
+        new Worker(new URL("./workers/sudokuWorker.ts", import.meta.url), {
+          type: "module",
+        })
+    );
+
+    let completed = false;
+
+    workers.forEach((worker) => {
+      worker.onmessage = function (event) {
+        const solution = event.data as SudokuGame;
+        if (completed) {
+          return;
+        }
+
+        if (solution.isCompleted) {
+          completed = true;
+          setGame(solution);
+          workers.forEach((w) => w.terminate());
+        } else {
+          console.info("Worker failed to solve the puzzle:", solution);
+        }
+      };
+
+      worker.postMessage(originalGame ?? game);
+    });
   };
 
   const handleSolveNextClick = () => {
@@ -105,8 +125,8 @@ function App() {
               >
                 {cellHasValue(cell) ? null : (
                   <div className="cell__options">
-                    {options.map((o) => (
-                      <span key={o}>{cell.options.includes(o) ? o : " "}</span>
+                    {options.map((o, i) => (
+                      <span key={i}>{cell.options.includes(o) ? o : " "}</span>
                     ))}
                   </div>
                 )}
