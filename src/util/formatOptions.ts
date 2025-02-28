@@ -1,10 +1,15 @@
-export const formatOptions = (options: number[]) => {
+export const formatOptions = (options: string[], validOptions: string[]) => {
   const formattedOptions: string[] = [];
-  for (let i = 0; i < 9; i++) {
-    formattedOptions.push(options.includes(i + 1) ? `${i + 1}` : " ");
-    if (i % 3 === 2) {
+  validOptions.forEach((validOption, i) => {
+    formattedOptions.push(
+      options.includes(validOption) ? `${validOption}` : " "
+    );
+    if (
+      i % Math.sqrt(validOption.length) ===
+      Math.sqrt(validOption.length) - 1
+    ) {
       formattedOptions.push("\n");
     }
-  }
+  });
   return formattedOptions.join(" ").replace(/\n\s/g, "\n");
 };

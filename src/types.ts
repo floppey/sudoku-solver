@@ -1,6 +1,6 @@
 export interface Cell {
-  value: number | null;
-  options: number[];
+  value: string | null;
+  options: string[];
   isFixed: boolean;
   row: number;
   column: number;
@@ -13,12 +13,13 @@ export interface Board {
 export interface Move {
   row: number;
   column: number;
-  value: number | null;
+  value: string | null;
   previousState: SudokuGame;
 }
 
 export interface SudokuGame {
   board: Board;
+  boardSize: number;
   isCompleted: boolean;
   moves: Move[];
 }

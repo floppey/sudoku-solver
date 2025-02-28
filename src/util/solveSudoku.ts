@@ -1,18 +1,21 @@
+import { VALID_OPTIONS } from "../constants/constants";
 import { Cell, Move, SudokuGame } from "../types";
+import { cellHasValue } from "./cellHasValue";
 import { reducePairsInGrid } from "./reducePairsInGrid";
 
 export const getOptionsForCell = (
   game: SudokuGame,
   row: number,
   column: number
-): number[] => {
+): string[] => {
   if (game.board.cells[row][column].value !== null) {
     return [];
   }
-  const options = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  const { boardSize } = game;
+  const options = new Set(VALID_OPTIONS.slice(0, boardSize));
 
   // Remove options from row and column that are already taken
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < boardSize; i++) {
     const rowValue = game.board.cells[row][i].value;
     const columnValue = game.board.cells[i][column].value;
     if (rowValue !== null) {
@@ -23,14 +26,15 @@ export const getOptionsForCell = (
     }
   }
 
-  // Remove options from 3x3 grid that are already taken
-  const gridRow = Math.floor(row / 3) * 3;
-  const gridColumn = Math.floor(column / 3) * 3;
-  for (let i = gridRow; i < gridRow + 3; i++) {
-    for (let j = gridColumn; j < gridColumn + 3; j++) {
+  const gridSize = Math.sqrt(boardSize);
+  // Remove options from grid that are already taken
+  const gridRow = Math.floor(row / gridSize) * gridSize;
+  const gridColumn = Math.floor(column / gridSize) * gridSize;
+  for (let i = gridRow; i < gridRow + gridSize; i++) {
+    for (let j = gridColumn; j < gridColumn + gridSize; j++) {
       const value = game.board.cells[i][j].value;
-      if (value !== null) {
-        options.delete(value);
+      if (typeof value === "string" && value.trim() !== "") {
+        options.delete(value!);
       }
     }
   }
@@ -45,6 +49,8 @@ export const solveSudoku = (
   const newGame = {
     ...game,
   };
+  const { boardSize } = newGame;
+  const gridSize = Math.sqrt(boardSize);
 
   let changed = false;
   let attempts = 0;
@@ -53,7 +59,7 @@ export const solveSudoku = (
     // Fill in cells with only one option
     newGame.board.cells.forEach((row, rowIndex) => {
       row.forEach((cell, columnIndex) => {
-        if (cell.value !== null) {
+        if (cellHasValue(cell)) {
           cell.options = [cell.value];
           return;
         }
@@ -74,7 +80,7 @@ export const solveSudoku = (
   // Check for unique options in row, column, and grid
   newGame.board.cells.forEach((row) => {
     row.forEach((cell) => {
-      if (cell.value !== null) {
+      if (cellHasValue(cell)) {
         return;
       }
       cell.options.forEach((option) => {
@@ -100,9 +106,9 @@ export const solveSudoku = (
   attempts = 0;
   do {
     temp = false;
-    for (let row = 0; row < 9; row += 3) {
-      for (let col = 0; col < 9; col += 3) {
-        temp = reducePairsInGrid(newGame.board, row, col) || changed;
+    for (let row = 0; row < boardSize; row += gridSize) {
+      for (let col = 0; col < boardSize; col += gridSize) {
+        temp = reducePairsInGrid(newGame, row, col) || changed;
       }
     }
     changed = changed || temp;
@@ -112,7 +118,7 @@ export const solveSudoku = (
   // Fill in cells with only one option
   newGame.board.cells.forEach((row) => {
     row.forEach((cell) => {
-      if (cell.value !== null) {
+      if (cellHasValue(cell)) {
         return;
       }
       if (cell.options.length === 1) {
@@ -124,7 +130,7 @@ export const solveSudoku = (
 
   // Check if the game is completed
   newGame.isCompleted = newGame.board.cells.every((row) =>
-    row.every((cell) => cell.value !== null)
+    row.every((cell) => cellHasValue(cell))
   );
 
   // Return if the game is completed
@@ -134,11 +140,11 @@ export const solveSudoku = (
 
   // Use WFC to make a guess
   if (!changed && allowGuess) {
-    let minOptions = 999;
+    let minOptions = game.boardSize + 1;
     let minCells: Cell[] = [];
     newGame.board.cells.forEach((row) => {
       row.forEach((cell) => {
-        if (cell.value !== null) return;
+        if (cellHasValue(cell)) return;
         if (cell.options.length < minOptions) {
           minCells = [];
           minOptions = cell.options.length;

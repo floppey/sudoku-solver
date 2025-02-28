@@ -1,28 +1,32 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SudokuGame } from "./types";
 import { solveSudoku } from "./util/solveSudoku";
 import { cloneGame } from "./util/cloneGame";
 import { generateBoard } from "./util/generateBoard";
-import { formatOptions } from "./util/formatOptions";
-
-const BOARD_SIZE = 9;
+import { VALID_OPTIONS } from "./constants/constants";
+import { cellHasValue } from "./util/cellHasValue";
 
 function App() {
+  const [boardSize, setBoardSize] = useState(9);
+  const options = VALID_OPTIONS.slice(0, boardSize);
   const [game, setGame] = useState<SudokuGame>({
     board: {
-      cells: generateBoard(BOARD_SIZE),
+      cells: generateBoard(boardSize),
     },
     isCompleted: false,
+    boardSize,
     moves: [],
   });
   const [originalGame, setOriginalGame] = useState<SudokuGame | null>(null);
 
-  const handleOnChange = (row: number, column: number, value: number) => {
+  const handleOnChange = (row: number, column: number, value: string) => {
     const newBoard = { ...game.board };
-    const safeValue =
-      !value || isNaN(value) || typeof value !== "number"
-        ? null
-        : Math.max(0, Math.min(value, 9));
+    let safeValue = options.includes(value) ? value : "";
+    if (safeValue === "" && /[0-9]{1,2}/g.test(value)) {
+      const index = parseInt(value, 10) - 1;
+      safeValue = options[index] ?? "";
+    }
+
     newBoard.cells[row][column].value = safeValue;
     setGame({
       ...game,
@@ -31,19 +35,20 @@ function App() {
     setOriginalGame(cloneGame(game));
   };
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setGame({
       board: {
-        cells: generateBoard(BOARD_SIZE),
+        cells: generateBoard(boardSize),
       },
       isCompleted: false,
       moves: [],
+      boardSize,
     });
     setOriginalGame(null);
-  };
+  }, [boardSize]);
 
   const handleSolveClick = () => {
-    let attempts = 1000;
+    let attempts = boardSize === 16 ? 100 : 1000;
     if (!originalGame) {
       setOriginalGame(cloneGame(game));
     }
@@ -62,44 +67,59 @@ function App() {
     setGame(newGame);
   };
 
+  const handleBoardSizeChange = (size: string) => {
+    setBoardSize(parseInt(size, 10));
+  };
+
+  useEffect(() => {
+    resetGame();
+  }, [boardSize, resetGame]);
+
   return (
     <div className="app">
       <div className="buttons">
         <button onClick={() => handleSolveClick()}>Solve All</button>
         <button onClick={() => handleSolveNextClick()}>Solve Next</button>
         <button onClick={() => resetGame()}>Reset</button>
+        <select
+          value={boardSize}
+          onChange={(e) => handleBoardSizeChange(e.target.value)}
+        >
+          <option value="4">4x4</option>
+          <option value="9">9x9</option>
+          <option value="16">16x16</option>
+        </select>
       </div>
-      <div className="game">
+      <div
+        className={`game ${
+          game.isCompleted ? "game--completed" : ""
+        } game--${boardSize}`}
+      >
         {game.board.cells.map((row, rowIndex) => (
           <div key={rowIndex} className="row">
             {row.map((cell, cellIndex) => (
               <div
                 className={`cell ${
-                  cell.value ? "cell--solved" : "cell--unsolved"
+                  cellHasValue(cell) ? "cell--solved" : "cell--unsolved"
                 }`}
               >
-                {cell.value ? null : (
+                {cellHasValue(cell) ? null : (
                   <div className="cell__options">
-                    {Array.from({ length: 9 }, (_, i) => (
-                      <span key={i}>
-                        {cell.options.includes(i + 1) ? i + 1 : " "}
-                      </span>
+                    {options.map((o) => (
+                      <span key={o}>{cell.options.includes(o) ? o : " "}</span>
                     ))}
                   </div>
                 )}
                 <input
                   className="cell__input"
-                  type="number"
-                  min={1}
-                  max={9}
                   key={cellIndex}
-                  value={cell.value ?? formatOptions(cell.options)}
+                  value={cellHasValue(cell) ? cell.value : ""}
                   onClick={(e) => e.currentTarget.select()}
                   onChange={(e) =>
                     handleOnChange(
                       rowIndex,
                       cellIndex,
-                      parseInt(e.target.value, 10)
+                      e.target.value?.toUpperCase() ?? ""
                     )
                   }
                   readOnly={cell.isFixed}
