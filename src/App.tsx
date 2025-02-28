@@ -1,50 +1,21 @@
 import { useState } from "react";
-import { Cell, SudokuGame } from "./types";
+import { SudokuGame } from "./types";
 import { solveSudoku } from "./util/solveSudoku";
+import { cloneGame } from "./util/cloneGame";
+import { generateBoard } from "./util/generateBoard";
+import { formatOptions } from "./util/formatOptions";
 
 const BOARD_SIZE = 9;
-
-const generateBoard = (): Cell[][] => {
-  const cells: Cell[][] = Array.from({ length: BOARD_SIZE }, (_, row) =>
-    Array.from({ length: BOARD_SIZE }, (_, column) => ({
-      value: null,
-      isFixed: false,
-      options: [],
-      row,
-      column,
-    }))
-  );
-
-  cells.forEach((row) => {
-    row.forEach((cell) => {
-      if (cell.value !== null) {
-        cell.isFixed = true;
-      }
-    });
-  });
-
-  return cells;
-};
-
-const formatOptions = (options: number[]) => {
-  const formattedOptions: string[] = [];
-  for (let i = 0; i < 9; i++) {
-    formattedOptions.push(options.includes(i + 1) ? `${i + 1}` : " ");
-    if (i % 3 === 2) {
-      formattedOptions.push("\n");
-    }
-  }
-  return formattedOptions.join(" ").replace(/\n\s/g, "\n");
-};
 
 function App() {
   const [game, setGame] = useState<SudokuGame>({
     board: {
-      cells: generateBoard(),
+      cells: generateBoard(BOARD_SIZE),
     },
     isCompleted: false,
     moves: [],
   });
+  const [originalGame, setOriginalGame] = useState<SudokuGame | null>(null);
 
   const handleOnChange = (row: number, column: number, value: number) => {
     const newBoard = { ...game.board };
@@ -57,22 +28,27 @@ function App() {
       ...game,
       board: newBoard,
     });
+    setOriginalGame(cloneGame(game));
   };
 
   const resetGame = () => {
     setGame({
       board: {
-        cells: generateBoard(),
+        cells: generateBoard(BOARD_SIZE),
       },
       isCompleted: false,
       moves: [],
     });
+    setOriginalGame(null);
   };
 
   const handleSolveClick = () => {
     let attempts = 1000;
+    if (!originalGame) {
+      setOriginalGame(cloneGame(game));
+    }
     do {
-      const newGame = solveSudoku(game, true);
+      const newGame = solveSudoku(originalGame ?? game, true);
       setGame(newGame);
       if (newGame.isCompleted) {
         break;
